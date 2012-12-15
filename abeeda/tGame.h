@@ -52,18 +52,11 @@ class tGame{
 public:
     tExperiment theExperiment;
     void loadExperiment(char *filename);
-    string executeGame(tAgent* swarmAgent, tAgent* predatorAgent, FILE *data_file, bool report, double safetyDist, double predatorVisionRange, double predatorVisionAngle, int killDelay, double Es, double Emax, double Emin);
+    string executeGame(tAgent* pathfinderAgent, FILE *data_file, bool report);
     tGame();
     ~tGame();
     double calcDistanceSquared(double fromX, double fromY, double toX, double toY);
     double calcAngle(double fromX, double fromY, double fromAngle, double toX, double toY);
-    void calcSwarmCenter(double preyX[], double preyY[], bool preyDead[], double& preyCenterX, double& preyCenterY);
-    void recalcPredDistTable(double preyX[], double preyY[], bool preyDead[],
-                             double predX, double predY,
-                             double predDists[swarmSize]);
-    void recalcPredAndPreyDistTable(double preyX[], double preyY[], bool preyDead[],
-                                    double predX, double predY,
-                                    double predDists[swarmSize], double preyDists[swarmSize][swarmSize]);
     void applyBoundary(double& positionVal);
     double sum(vector<double> values);
     double average(vector<double> values);
@@ -77,8 +70,6 @@ public:
     double computeR(vector<vector<int> > table,int howFarBack);
     double computeOldR(vector<vector<int> > table);
     double entropy(vector<int> list);
-    int neuronsConnectedToPreyRetina(tAgent *agent);
-    int neuronsConnectedToPredatorRetina(tAgent* agent);
 
 };
 #endif
