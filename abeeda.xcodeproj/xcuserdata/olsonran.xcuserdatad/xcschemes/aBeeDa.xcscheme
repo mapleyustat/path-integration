@@ -58,7 +58,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-e lod.csv swarm.genome -g 1200 -v 10"
+            argument = "-e lod.csv pathfinder.genome -g 3000"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument

@@ -28,13 +28,13 @@
 #define cPI 3.14159265
 
 // simulation-specific constants
-#define pathfinderVisionRange 25.0 * 25.0
+#define pathfinderVisionRange 50.0 * 50.0
 #define pathfinderVisionAngle 180.0 / 2.0
-#define pathfinderSensors 12
-#define totalStepsInSimulation 10000
+#define pathfinderSensors 4
+#define totalStepsInSimulation 2000
 #define gridX 256.0
 #define gridY 256.0
-#define contactDist 5.0 * 5.0
+#define contactDist 20.0 * 20.0
 #define boundaryDist 250.0
 
 // precalculated lookup tables for the game
@@ -61,12 +61,23 @@ string tGame::executeGame(tAgent* pathfinderAgent, FILE *data_file, bool report)
     bool pathfinderHasFood = false;
     double hiveX = 0.0, hiveY = 0.0;
     double foodX = 0.0, foodY = 0.0;
+    double sunX = 0.0, sunY = -gridY;
+    int scentDelay = 0;
+    int totalFood = 0;
+    vector<double> scentLocationX;
+    vector<double> scentLocationY;
     
-    pathfinderX = hiveX = 0.0;
-    pathfinderY = hiveY = -245.0;
+    pathfinderAgent->setupPhenotype();
     
-    foodX = (2.0 * randDouble * gridX) - gridX;
-    foodY = randDouble * gridY;
+    pathfinderX = 200.0;
+    pathfinderY = 200.0;
+    //pathfinderAngle = (int)(randDouble * 360.0);
+    
+    hiveX = 200.0;
+    hiveY = 205.0;
+    
+    foodX = -200.0;//(2.0 * randDouble * gridX) - gridX;
+    foodY = -200.0;//-randDouble * gridY;
     
     /*       BEGINNING OF SIMULATION LOOP       */
     
@@ -85,13 +96,28 @@ string tGame::executeGame(tAgent* pathfinderAgent, FILE *data_file, bool report)
             
             // report X, Y, angle of pathfinding agent
             char text1[1000];
-            sprintf(text1,"%f,%f,%f,%d,%d,%d=", pathfinderX, pathfinderY, pathfinderAngle, 255, 0, 0);
+            
+            if (pathfinderHasFood)
+            {
+                sprintf(text1,"%f,%f,%f,%d,%d,%d=", pathfinderX, pathfinderY, pathfinderAngle, 30, 144, 255);
+            }
+            else
+            {
+                sprintf(text1,"%f,%f,%f,%d,%d,%d=", pathfinderX, pathfinderY, pathfinderAngle, 255, 0, 0);
+            }
             reportString.append(text1);
             
             // report X, Y of food point
             char text2[1000];
             sprintf(text2,"%f,%f,%f,%d,%d,%d=", foodX, foodY, 0.0, 0, 255, 0);
             reportString.append(text2);
+            
+            for (int i = 0; i < scentLocationX.size(); ++i)
+            {
+                char text3[1000];
+                sprintf(text3,"%f,%f,%f,%d,%d,%d=", scentLocationX[i], scentLocationY[i], 0.0, 255, 255, 255);
+                reportString.append(text3);
+            }
             
             reportString.append("N");
             
@@ -110,7 +136,7 @@ string tGame::executeGame(tAgent* pathfinderAgent, FILE *data_file, bool report)
         /*       UPDATE PATHFINDER       */
         
         // clear the pathfinder sensors
-        for(int i = 0; i < pathfinderSensors * 2; ++i)
+        for(int i = 0; i < (pathfinderSensors * 3) + 1; ++i)
         {
             pathfinderAgent->states[i] = 0;
         }
@@ -141,6 +167,37 @@ string tGame::executeGame(tAgent* pathfinderAgent, FILE *data_file, bool report)
             }
         }
         
+        // scent
+        for (int i = 0; i < scentLocationX.size(); ++i)
+        {
+            if(calcDistanceSquared(pathfinderX, pathfinderY, scentLocationX[i], scentLocationY[i]) < pathfinderVisionRange)
+            {
+                double angle = calcAngle(pathfinderX, pathfinderY, pathfinderAngle, scentLocationX[i], scentLocationY[i]);
+                
+                // here we have to map the angle into the sensor, angle in degrees
+                if(fabs(angle) < pathfinderVisionAngle) // pathfinder has a limited vision field in front of it
+                {
+                    pathfinderAgent->states[(pathfinderSensors * 2) + (int)(angle / (pathfinderVisionAngle / ((double)pathfinderSensors / 2.0)) + ((double)pathfinderSensors / 2.0))] = 1;
+                }
+            }
+        }
+        
+        // sun
+        double angle = calcAngle(pathfinderX, pathfinderY, pathfinderAngle, sunX, sunY);
+            
+        // here we have to map the angle into the sensor, angle in degrees
+        pathfinderAgent->states[(pathfinderSensors * 3) + (int)(angle / (180.0 / ((double)pathfinderSensors / 2.0)) + ((double)pathfinderSensors / 2.0))] = 1;
+        
+        // has food?
+        if (pathfinderHasFood)
+        {
+            pathfinderAgent->states[(pathfinderSensors * 3) + 1] = 1;
+        }
+        else
+        {
+            pathfinderAgent->states[(pathfinderSensors * 3) + 1] = 0;
+        }
+        
         // activate the pathfinder's brain
         pathfinderAgent->updateStates();
         
@@ -149,8 +206,10 @@ string tGame::executeGame(tAgent* pathfinderAgent, FILE *data_file, bool report)
         
         switch(action)
         {
-                // do nothing
+                // move straight ahead
             case 0:
+                pathfinderX += cosLookup[(int)pathfinderAngle] * 2.0;
+                pathfinderY += sinLookup[(int)pathfinderAngle] * 2.0;
                 break;
                 
                 // turn right
@@ -162,8 +221,8 @@ string tGame::executeGame(tAgent* pathfinderAgent, FILE *data_file, bool report)
                     pathfinderAngle -= 360.0;
                 }
                 
-                pathfinderX += cosLookup[(int)pathfinderAngle];
-                pathfinderY += sinLookup[(int)pathfinderAngle];
+                pathfinderX += cosLookup[(int)pathfinderAngle] * 2.0;
+                pathfinderY += sinLookup[(int)pathfinderAngle] * 2.0;
                 
                 break;
                 
@@ -176,16 +235,26 @@ string tGame::executeGame(tAgent* pathfinderAgent, FILE *data_file, bool report)
                     pathfinderAngle += 360.0;
                 }
                 
-                pathfinderX += cosLookup[(int)pathfinderAngle];
-                pathfinderY += sinLookup[(int)pathfinderAngle];
+                pathfinderX += cosLookup[(int)pathfinderAngle] * 2.0;
+                pathfinderY += sinLookup[(int)pathfinderAngle] * 2.0;
                 
                 break;
                 
-                // move straight ahead
+                // mark location with scent
             case 3:
-                pathfinderX += cosLookup[(int)pathfinderAngle];
-                pathfinderY += sinLookup[(int)pathfinderAngle];
-                
+                if (scentDelay < 1)
+                {
+                    scentDelay = 25;
+                    
+                    scentLocationX.push_back(pathfinderX);
+                    scentLocationY.push_back(pathfinderY);
+                    
+                    if (scentLocationX.size() > 25)
+                    {
+                        scentLocationX.erase(scentLocationX.begin());
+                        scentLocationY.erase(scentLocationY.begin());
+                    }
+                }
                 break;
                 
             default:
@@ -196,17 +265,22 @@ string tGame::executeGame(tAgent* pathfinderAgent, FILE *data_file, bool report)
         applyBoundary(pathfinderX);
         applyBoundary(pathfinderY);
         
+        if (scentDelay > 0)
+        {
+            --scentDelay;
+        }
+        
         /*       END OF PATHFINDER UPDATE       */
         
         /*      STEP FITNESS EVALUATION         */
         
         if (!pathfinderHasFood)
         {
-            pathfinderFitness += (1.0 / calcDistanceSquared(pathfinderX, pathfinderY, foodX, foodY)) * (double)(totalStepsInSimulation - step);
+            pathfinderFitness += (1.0 / calcDistanceSquared(pathfinderX, pathfinderY, foodX, foodY)) * 500.0;
         }
         else
         {
-            pathfinderFitness += (1.0 / calcDistanceSquared(pathfinderX, pathfinderY, hiveX, hiveY)) * (double)(totalStepsInSimulation - step);
+            pathfinderFitness += (1.0 / calcDistanceSquared(pathfinderX, pathfinderY, hiveX, hiveY)) * 500.0 * 10.0;
         }
         
         /*      END STEP FITNESS EVALUATION         */
@@ -220,7 +294,9 @@ string tGame::executeGame(tAgent* pathfinderAgent, FILE *data_file, bool report)
         
         if (pathfinderHasFood && calcDistanceSquared(pathfinderX, pathfinderY, hiveX, hiveY) < contactDist)
         {
-            break;
+            pathfinderHasFood = false;
+            pathfinderFitness += (double)(totalStepsInSimulation - step);
+            ++totalFood;
         }
         
         /*      END STEP STATE UPDATE           */
@@ -237,7 +313,7 @@ string tGame::executeGame(tAgent* pathfinderAgent, FILE *data_file, bool report)
         fprintf(data_file, "%d,%f,%d\n",
                 pathfinderAgent->born,              // update born (prey)
                 pathfinderAgent->fitness,           // pathfinder fitness
-                step                                // # steps to finish
+                totalFood                           // total food brought back to nest
                 );
     }
     

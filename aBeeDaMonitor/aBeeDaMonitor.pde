@@ -35,13 +35,16 @@ void drawArea(){
      if (showLegend && currentStep < 200)
      {
        fill(255, 0, 0);
-       text("Red - predator", 10, 40);
+       text("Red - pathfinder", 10, 40);
       
-       fill(255, 255, 255);
-       text("White - prey", 10, 65);
+       fill(255, 255, 0);
+       text("Yellow - hive", 10, 65);
       
        fill(0, 255, 0);
-       text("Green - center of swarm", 10, 90);
+       text("Green - food", 10, 90);
+      
+       fill(255, 255, 255);
+       text("White - scent trail", 10, 115);
       
        //fill(30, 144, 255);
        //text("Blue - prey visible to predator", 10, 115);

@@ -343,7 +343,7 @@ int main(int argc, char *argv[])
     delete pathfinderAgent;
     pathfinderAgent = new tAgent;
     pathfinderAgent->setupRandomAgent(5000);
-    //pathfinderAgent->loadAgent("startPathfinder.genome");
+    //pathfinderAgent->loadAgent("startPathfinderAgent.genome");
     
     // make mutated copies of the start genome to fill up the initial population
 	for(int i = 0; i < populationSize; ++i)
@@ -392,7 +392,7 @@ int main(int argc, char *argv[])
         
         pathfinderAvgFitness /= (double)populationSize;
 		
-		cout << "generation " << update << ": swarm [" << (int)pathfinderAvgFitness << " : " << (int)pathfinderMaxFitness << "]" << endl;
+		cout << "generation " << update << ": pathfinder [" << (int)pathfinderAvgFitness << " : " << (int)pathfinderMaxFitness << "]" << endl;
         
         // display video of simulation
         if (make_interval_video)
@@ -446,7 +446,7 @@ int main(int argc, char *argv[])
         {
             stringstream pss;
             
-            pss << "swarm" << update << ".genome";
+            pss << "pathfinder" << update << ".genome";
             
             pathfinderAgents[0]->ancestor->ancestor->saveGenome(pss.str().c_str());
         }
@@ -476,7 +476,7 @@ int main(int argc, char *argv[])
     
     FILE *LOD = fopen(LODFileName.c_str(), "w");
 
-    fprintf(LOD, "generation,prey_fitness,predator_fitness,num_alive_end,avg_bb_size,var_bb_size,avg_shortest_dist,swarm_density_count,prey_neurons_connected_prey_retina,prey_neurons_connected_predator_retina,predator_neurons_connected_prey_retina,mutual_info,num_attacks\n");
+    fprintf(LOD, "generation,pathfinder_fitness,num_food\n");
     
     cout << "analyzing ancestor list" << endl;
     
